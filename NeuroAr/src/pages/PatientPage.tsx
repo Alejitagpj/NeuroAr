@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useStore } from "../store/StoreContext";
-import { AssessmentChart } from "../components/AssessmentChart";
+import { AnalysisPanel } from "../components/analysis/AnalysisPanel";
 import { BrainCanvas } from "../components/BrainCanvas";
 import { ReportEditor } from "../components/ReportEditor";
 import { ReportStatusBadge } from "../components/ReportStatusBadge";
@@ -30,6 +30,12 @@ export function PatientPage() {
 
   const ranges = useMemo<Record<string, DomainRange>>(
     () => Object.fromEntries((patient?.results ?? []).map((r) => [r.domain, r.range])),
+    [patient]
+  );
+
+  // Intensidades 0..1 (percentil/100) para escalar tamaño/brillo de las regiones 3D.
+  const intensities = useMemo<Record<string, number>>(
+    () => Object.fromEntries((patient?.results ?? []).map((r) => [r.domain, r.percentile / 100])),
     [patient]
   );
 
@@ -71,7 +77,19 @@ export function PatientPage() {
               <h1 className="text-xl font-bold text-ink-900">{patient.code}</h1>
               <ReportStatusBadge status={status} />
             </div>
-            <p className="mt-1 text-sm text-slate-500">{patient.context}</p>
+            <p className="mt-1 max-w-xl text-sm text-slate-500">{patient.context}</p>
+            {patient.clinicalTags && patient.clinicalTags.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {patient.clinicalTags.map((t) => (
+                  <span
+                    key={t}
+                    className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200"
+                  >
+                    {t}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-sm">
             <Meta label="Edad" value={`${patient.age} años`} />
@@ -98,6 +116,7 @@ export function PatientPage() {
               className="h-full w-full"
               interactive
               ranges={ranges}
+              intensities={intensities}
               activeDomain={activeDomain}
               onRegionClick={toggleDomain}
             />
@@ -153,19 +172,20 @@ export function PatientPage() {
           </div>
         )}
 
-        {/* perfil en barras (mismo dato del PDF) */}
-        <div className="mt-6 border-t border-slate-100 pt-4">
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Perfil en barras
-          </h3>
-          <AssessmentChart results={patient.results} />
-        </div>
       </div>
+
+      {/* Panel de análisis de datos (premium) */}
+      <AnalysisPanel patient={patient} />
 
       {/* Generación / informe */}
       <div className="rounded-xl border border-slate-200 bg-white p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold text-ink-900">Informe asistido por IA</h2>
+          <div>
+            <h2 className="text-sm font-semibold text-ink-900">Informe asistido por IA</h2>
+            <p className="mt-0.5 text-[11px] text-slate-400">
+              Gemini lee la fuente (PDF · Word · imagen) · Claude redacta · el profesional valida
+            </p>
+          </div>
           <div className="flex items-center gap-2">
             {report?.source && (
               <span className="text-xs text-slate-400">
