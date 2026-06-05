@@ -20,6 +20,7 @@ type StoreValue = {
   generate: (patient: Patient) => Promise<void>;
   updateEdited: (patientId: string, content: ReportContent) => Promise<void>;
   validate: (patientId: string, validatedBy: string) => Promise<void>;
+  importPatient: (patient: Patient) => void; // agrega un paciente importado (en memoria)
 };
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -92,6 +93,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [persist, reports]
   );
 
+  const importPatient = useCallback((patient: Patient) => {
+    // Antepone el paciente importado para que sea inmediatamente visible en el panel.
+    setPatients((prev) => (prev.some((p) => p.id === patient.id) ? prev : [patient, ...prev]));
+  }, []);
+
   const value = useMemo<StoreValue>(
     () => ({
       loading,
@@ -102,8 +108,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       generate,
       updateEdited,
       validate,
+      importPatient,
     }),
-    [loading, patients, reports, generate, updateEdited, validate]
+    [loading, patients, reports, generate, updateEdited, validate, importPatient]
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

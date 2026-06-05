@@ -1,4 +1,5 @@
 import type { Patient } from "../types/neuroar";
+import { rangeFromPercentile } from "./rangeUtils";
 
 // ───────────────────────────────────────────────────────────────────────────
 // CAPA DE INGESTA MULTIMODAL  (Gemini extrae · Claude analiza)
@@ -90,4 +91,30 @@ export function selectExtractor(): AssessmentExtractor {
   // const choice = (import.meta.env.VITE_INGEST_PROVIDER as string | undefined)?.toLowerCase();
   // if (choice === "gemini") return geminiExtractor; // (servidor) — pendiente de cableado
   return mockExtractor;
+}
+
+// Convierte la estructura extraída por la ingesta en un Paciente del dominio,
+// derivando el rango interpretativo a partir del percentil.
+export function extractedToPatient(ex: ExtractedAssessment): import("../types/neuroar").Patient {
+  const id = `imp-${ex.code}-${Date.now().toString(36)}`;
+  return {
+    id,
+    code: ex.code,
+    age: ex.age ?? 0,
+    institution: ex.institution ?? "Importado",
+    context: ex.context ?? "Evaluación importada. Requiere validación profesional.",
+    assessmentDate: ex.assessmentDate ?? new Date().toISOString().slice(0, 10),
+    professional: { name: "Pendiente de asignación" },
+    clinicalTags: [
+      "Importado",
+      `Fuente: ${ex.sourceKind.toUpperCase()}`,
+      ...(ex.clinicalTags ?? []),
+    ],
+    results: ex.results.map((r) => ({
+      domain: r.domain,
+      percentile: r.percentile,
+      range: rangeFromPercentile(r.percentile),
+    })),
+    longitudinal: ex.longitudinal,
+  };
 }

@@ -3,6 +3,8 @@ import { Link, useParams } from "react-router-dom";
 import { useStore } from "../store/StoreContext";
 import { AnalysisPanel } from "../components/analysis/AnalysisPanel";
 import { BrainCanvas } from "../components/BrainCanvas";
+import { FamilyView } from "../components/FamilyView";
+import { useAudience } from "../store/AudienceContext";
 import { ReportEditor } from "../components/ReportEditor";
 import { ReportStatusBadge } from "../components/ReportStatusBadge";
 import { PdfDownloadButton } from "../components/PdfDownloadButton";
@@ -12,6 +14,7 @@ import type { ReportContent } from "../types/neuroar";
 
 export function PatientPage() {
   const { id = "" } = useParams();
+  const { audience } = useAudience();
   const { patients, getReport, generate, updateEdited, validate, loading } = useStore();
   const patient = patients.find((p) => p.id === id);
   const report = getReport(id);
@@ -60,6 +63,18 @@ export function PatientPage() {
       setGenerating(false);
     }
   };
+
+  // Vista FAMILIA: presentación cálida y simplificada del mismo caso.
+  if (audience === "familia") {
+    return (
+      <div className="space-y-4">
+        <Link to="/app" className="text-sm text-brand-600 hover:underline">
+          ← Volver al panel
+        </Link>
+        <FamilyView patient={patient} report={report} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
