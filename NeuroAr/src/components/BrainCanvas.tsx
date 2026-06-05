@@ -8,9 +8,11 @@ const Brain3D = lazy(() => import("../three/Brain3D"));
 
 type Props = {
   ranges?: Record<string, DomainRange>;
+  intensities?: Record<string, number>;
   activeDomain?: string | null;
   onRegionClick?: (domain: string) => void;
   interactive?: boolean;
+  showRegions?: boolean;
   className?: string;
 };
 

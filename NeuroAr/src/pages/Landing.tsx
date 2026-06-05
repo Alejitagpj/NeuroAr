@@ -1,5 +1,9 @@
+import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
-import { BrainCanvas } from "../components/BrainCanvas";
+
+const BrainCanvas = lazy(() =>
+  import("../components/BrainCanvas").then((m) => ({ default: m.BrainCanvas }))
+);
 
 export function Landing() {
   return (
@@ -64,7 +68,9 @@ export function Landing() {
 
         {/* cerebro 3D */}
         <div className="relative h-[360px] w-full sm:h-[440px] lg:h-[520px]">
-          <BrainCanvas className="h-full w-full" interactive={false} />
+          <Suspense fallback={<div className="flex h-full items-center justify-center text-slate-500 text-sm">Cargando…</div>}>
+            <BrainCanvas className="h-full w-full" interactive={false} />
+          </Suspense>
         </div>
       </section>
 

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useStore } from "../store/StoreContext";
 import { getSupabase } from "../lib/supabaseClient";
+import { AudienceSwitch } from "./AudienceSwitch";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { providerKind } = useStore();
@@ -24,8 +25,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </Link>
           <div className="flex items-center gap-3">
+            <AudienceSwitch />
             <span
-              className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600"
+              className="hidden rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600 sm:inline"
               title="Fuente de datos activa"
             >
               datos: {providerKind}

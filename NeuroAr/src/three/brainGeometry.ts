@@ -106,3 +106,12 @@ export const RANGE_HEX: Record<DomainRange, string> = {
   esperado: "#38bdf8",
   destacado: "#34d399",
 };
+
+// Vector de cámara sugerido para "enfocar" una región (zoom por dominio).
+// Coloca la cámara a cierta distancia por fuera de la posición de la región.
+export function focusCameraFor(position: [number, number, number]): [number, number, number] {
+  const [x, y, z] = position;
+  const len = Math.hypot(x, y, z) || 1;
+  const dist = 2.7; // distancia de observación
+  return [(x / len) * dist + x * 0.15, (y / len) * dist * 0.6 + 0.35, (z / len) * dist + z * 0.15];
+}

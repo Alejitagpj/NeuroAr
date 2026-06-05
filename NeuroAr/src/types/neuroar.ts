@@ -15,6 +15,22 @@ export type Professional = {
   licenseNo?: string;
 };
 
+// Serie longitudinal (p. ej. intentos sucesivos de una prueba de memoria).
+// Permite visualizar progreso/variabilidad además del perfil por dominios.
+export type AttemptPoint = {
+  intento: number;
+  aciertos: number;
+  errores: number;
+  tiempoSeg?: number;
+};
+
+export type LongitudinalSeries = {
+  label: string; // p. ej. "Prueba de memoria de trabajo"
+  unit: string; // p. ej. "aciertos"
+  maxScore: number; // tope de la escala (para % de logro)
+  attempts: AttemptPoint[];
+};
+
 export type Patient = {
   id: string;
   code: string; // p. ej. "NA-2026-001" — identificador anónimo
@@ -24,6 +40,8 @@ export type Patient = {
   assessmentDate: string; // ISO date
   professional: Professional;
   results: CognitiveDomainResult[];
+  clinicalTags?: string[]; // antecedentes/contexto reportado (p. ej. "TDAH (reportado)")
+  longitudinal?: LongitudinalSeries; // opcional: seguimiento por intentos
 };
 
 export type RecommendationCategory = "familia" | "institucion" | "profesional";

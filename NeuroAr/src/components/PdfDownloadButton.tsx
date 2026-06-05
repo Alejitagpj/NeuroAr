@@ -1,10 +1,6 @@
 import { useState } from "react";
-import { pdf } from "@react-pdf/renderer";
 import type { Patient, Report } from "../types/neuroar";
-import { NeuroArReportPdf } from "../pdf/NeuroArReportPdf";
 
-// Genera el PDF bajo demanda y dispara la descarga. Evita problemas de SSR/streaming
-// usando pdf().toBlob() en el click.
 export function PdfDownloadButton({
   patient,
   report,
@@ -20,7 +16,14 @@ export function PdfDownloadButton({
     if (!report) return;
     setBusy(true);
     try {
-      const blob = await pdf(<NeuroArReportPdf patient={patient} report={report} />).toBlob();
+      // Load heavy PDF renderer only on demand (keeps initial bundle small).
+      const [{ pdf }, { NeuroArReportPdf }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("../pdf/NeuroArReportPdf"),
+      ]);
+      const { createElement } = await import("react");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const blob = await pdf(createElement(NeuroArReportPdf, { patient, report }) as any).toBlob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;

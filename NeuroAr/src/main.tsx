@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import "./index.css";
 import App from "./App";
 import { StoreProvider } from "./store/StoreContext";
+import { AudienceProvider } from "./store/AudienceContext";
 import { AuthGate } from "./components/AuthGate";
 
 createRoot(document.getElementById("root")!).render(
@@ -11,7 +12,9 @@ createRoot(document.getElementById("root")!).render(
     <BrowserRouter>
       <AuthGate>
         <StoreProvider>
-          <App />
+          <AudienceProvider>
+            <App />
+          </AudienceProvider>
         </StoreProvider>
       </AuthGate>
     </BrowserRouter>

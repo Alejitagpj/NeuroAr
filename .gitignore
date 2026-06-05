@@ -1,0 +1,17 @@
+# Dependencias
+node_modules/
+**/node_modules/
+
+# Builds
+dist/
+**/dist/
+*.tsbuildinfo
+
+# Entornos / secretos
+.env
+.env.*
+!.env.example
+
+# Sistema / editores
+.DS_Store
+*.log
