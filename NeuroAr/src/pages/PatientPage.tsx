@@ -1,13 +1,24 @@
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useStore } from "../store/StoreContext";
-import { AnalysisPanel } from "../components/analysis/AnalysisPanel";
-import { BrainCanvas } from "../components/BrainCanvas";
-import { FamilyView } from "../components/FamilyView";
+
+const BrainCanvas = lazy(() =>
+  import("../components/BrainCanvas").then((m) => ({ default: m.BrainCanvas }))
+);
+
+const AnalysisPanel = lazy(() =>
+  import("../components/analysis/AnalysisPanel").then((m) => ({ default: m.AnalysisPanel }))
+);
+const FamilyView = lazy(() =>
+  import("../components/FamilyView").then((m) => ({ default: m.FamilyView }))
+);
 import { useAudience } from "../store/AudienceContext";
 import { ReportEditor } from "../components/ReportEditor";
 import { ReportStatusBadge } from "../components/ReportStatusBadge";
-import { PdfDownloadButton } from "../components/PdfDownloadButton";
+
+const PdfDownloadButton = lazy(() =>
+  import("../components/PdfDownloadButton").then((m) => ({ default: m.PdfDownloadButton }))
+);
 import { RANGE_BADGE_CLASS, RANGE_LABEL } from "../lib/rangeUtils";
 import type { DomainRange } from "../three/brainGeometry";
 import type { ReportContent } from "../types/neuroar";
@@ -71,7 +82,9 @@ export function PatientPage() {
         <Link to="/app" className="text-sm text-brand-600 hover:underline">
           ← Volver al panel
         </Link>
-        <FamilyView patient={patient} report={report} />
+        <Suspense fallback={<PanelSkeleton />}>
+          <FamilyView patient={patient} report={report} />
+        </Suspense>
       </div>
     );
   }
@@ -127,14 +140,16 @@ export function PatientPage() {
         <div className="grid gap-6 lg:grid-cols-2">
           {/* cerebro 3D interactivo */}
           <div className="relative h-[320px] overflow-hidden rounded-xl bg-gradient-to-b from-slate-900 to-slate-950 sm:h-[360px]">
-            <BrainCanvas
-              className="h-full w-full"
-              interactive
-              ranges={ranges}
-              intensities={intensities}
-              activeDomain={activeDomain}
-              onRegionClick={toggleDomain}
-            />
+            <Suspense fallback={<div className="flex h-full items-center justify-center text-slate-500 text-xs">Cargando cerebro 3D…</div>}>
+              <BrainCanvas
+                className="h-full w-full"
+                interactive
+                ranges={ranges}
+                intensities={intensities}
+                activeDomain={activeDomain}
+                onRegionClick={toggleDomain}
+              />
+            </Suspense>
             {/* leyenda */}
             <div className="pointer-events-none absolute bottom-3 left-3 flex gap-3 text-[11px] text-white/80">
               <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-red-400" />Bajo</span>
@@ -190,7 +205,9 @@ export function PatientPage() {
       </div>
 
       {/* Panel de análisis de datos (premium) */}
-      <AnalysisPanel patient={patient} />
+      <Suspense fallback={<PanelSkeleton />}>
+        <AnalysisPanel patient={patient} />
+      </Suspense>
 
       {/* Generación / informe */}
       <div className="rounded-xl border border-slate-200 bg-white p-6">
@@ -267,13 +284,21 @@ export function PatientPage() {
                   </button>
                 </>
               ) : (
-                <PdfDownloadButton patient={patient} report={report} />
+                <Suspense fallback={null}>
+                  <PdfDownloadButton patient={patient} report={report} />
+                </Suspense>
               )}
             </div>
           </>
         )}
       </div>
     </div>
+  );
+}
+
+function PanelSkeleton() {
+  return (
+    <div className="h-64 animate-pulse rounded-2xl bg-slate-100" />
   );
 }
 
