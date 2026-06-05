@@ -1,5 +1,6 @@
 import type { Patient } from "../types/neuroar";
 import { rangeFromPercentile } from "./rangeUtils";
+import { getSupabase } from "./supabaseClient";
 
 // ───────────────────────────────────────────────────────────────────────────
 // CAPA DE INGESTA MULTIMODAL  (Gemini extrae · Claude analiza)
@@ -85,11 +86,48 @@ export const mockExtractor: AssessmentExtractor = {
   },
 };
 
-// Selecciona el extractor. Cuando exista backend de extracción (Gemini), se
-// inyecta aquí mediante VITE_INGEST_PROVIDER=gemini.
+// Codifica un ArrayBuffer a base64 (por bloques, para no exceder el stack).
+function arrayBufferToBase64(buf: ArrayBuffer): string {
+  const bytes = new Uint8Array(buf);
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
+// Extractor real: invoca la Edge Function `extract-assessment` (Gemini en el servidor).
+// Si algo falla (sin red, sin bytes, error del modelo), cae al extractor simulado.
+export const geminiExtractor: AssessmentExtractor = {
+  kind: "gemini",
+  async extract(file) {
+    const supabase = getSupabase();
+    if (!supabase || !file.bytes) return mockExtractor.extract(file);
+    try {
+      const { data, error } = await supabase.functions.invoke("extract-assessment", {
+        body: {
+          fileBase64: arrayBufferToBase64(file.bytes),
+          mimeType: file.mime ?? "application/octet-stream",
+          fileName: file.name,
+        },
+      });
+      if (error || !data || !Array.isArray((data as ExtractedAssessment).results)) {
+        return mockExtractor.extract(file);
+      }
+      const ex = data as ExtractedAssessment;
+      return { ...ex, sourceKind: ex.sourceKind ?? detectSourceKind(file.name, file.mime) };
+    } catch {
+      return mockExtractor.extract(file);
+    }
+  },
+};
+
+// Selecciona el extractor. Con VITE_INGEST_PROVIDER=gemini y Supabase configurado,
+// usa Gemini en el servidor; de lo contrario, el simulado (demo infalible).
 export function selectExtractor(): AssessmentExtractor {
-  // const choice = (import.meta.env.VITE_INGEST_PROVIDER as string | undefined)?.toLowerCase();
-  // if (choice === "gemini") return geminiExtractor; // (servidor) — pendiente de cableado
+  const choice = (import.meta.env.VITE_INGEST_PROVIDER as string | undefined)?.toLowerCase();
+  if (choice === "gemini") return geminiExtractor;
   return mockExtractor;
 }
 
